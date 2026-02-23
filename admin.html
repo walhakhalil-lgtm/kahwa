@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interface Admin</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Interface Admin</h1>
+      <p><a href="index.html">← Accueil</a></p>
+      <div class="cards">
+        <section class="panel">
+          <h2>Caisse</h2>
+          <div id="cashInfo" class="small"></div>
+          <div class="row" style="margin-top:8px">
+            <button onclick="Kahwa.openCash();render()">Ouvrir la journée</button>
+            <button class="danger" onclick="Kahwa.closeCash();render()">Fermer la journée</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h2>Menu</h2>
+          <div class="row">
+            <input id="itemName" placeholder="Nom article" />
+            <input id="itemPrice" type="number" step="0.1" placeholder="Prix" />
+            <button id="addItem">Ajouter</button>
+          </div>
+          <div id="menuList" class="list"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Tables & QR</h2>
+          <div class="row">
+            <input id="tableName" placeholder="Nom table" />
+            <button id="addTable">Ajouter table</button>
+          </div>
+          <div id="tableList" class="list"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Statistiques</h2>
+          <div id="stats" class="list"></div>
+        </section>
+      </div>
+    </main>
+    <script src="app.js"></script>
+    <script>
+      function render() {
+        const state = Kahwa.loadState();
+        document.getElementById('cashInfo').textContent = state.cash.isOpen
+          ? `✅ Ouverte depuis ${new Date(state.cash.openedAt).toLocaleString('fr-FR')}`
+          : `⛔ Fermée${state.cash.closedAt ? ' (fermée le ' + new Date(state.cash.closedAt).toLocaleString('fr-FR') + ')' : ''}`;
+
+        document.getElementById('menuList').innerHTML = state.menu.map(i => `
+          <div class="item row">
+            <strong>${i.name}</strong>
+            <input type="number" step="0.1" value="${i.price}" id="p-${i.id}" style="width:90px" />
+            <button onclick="Kahwa.setMenuPrice(${i.id}, document.getElementById('p-${i.id}').value);render()" class="secondary">Modifier prix</button>
+          </div>
+        `).join('');
+
+        const origin = location.origin === 'null' ? 'https://votre-domaine.com' : location.origin;
+        document.getElementById('tableList').innerHTML = state.tables.map(t => `
+          <div class="item">
+            <strong>${t.name}</strong><br>
+            <span class="small">QR URL: ${origin}/menu.html?table=${t.id}</span>
+          </div>
+        `).join('');
+
+        const paid = state.orders.filter(o => o.status === 'paid');
+        const ca = paid.reduce((s, o) => s + o.total, 0);
+        const top = {};
+        paid.forEach(o => o.lines.forEach(l => top[l.name] = (top[l.name] || 0) + l.qty));
+        const best = Object.entries(top).sort((a,b)=>b[1]-a[1]).slice(0,5);
+
+        document.getElementById('stats').innerHTML = `
+          <div class="item">Commandes payées: <strong>${paid.length}</strong></div>
+          <div class="item">Chiffre d'affaires: <strong>${Kahwa.fmt(ca)}</strong></div>
+          <div class="item">Top ventes: ${best.map(([name,qty]) => `${name} (${qty})`).join(', ') || 'N/A'}</div>
+        `;
+      }
+
+      document.getElementById('addItem').onclick = () => {
+        const name = document.getElementById('itemName').value.trim();
+        const price = document.getElementById('itemPrice').value;
+        if (!name || !price) return;
+        Kahwa.addMenuItem(name, price);
+        document.getElementById('itemName').value = '';
+        document.getElementById('itemPrice').value = '';
+        render();
+      };
+
+      document.getElementById('addTable').onclick = () => {
+        const name = document.getElementById('tableName').value.trim();
+        if (!name) return;
+        Kahwa.addTable(name);
+        document.getElementById('tableName').value = '';
+        render();
+      };
+
+      window.addEventListener('storage', render);
+      render();
+    </script>
+  </body>
+</html>

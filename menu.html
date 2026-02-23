@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Menu Client</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Menu du Café</h1>
+      <p><a href="index.html">← Accueil</a></p>
+      <section class="panel">
+        <h2 id="tableLabel"></h2>
+        <div id="cashState" class="small"></div>
+        <div class="row" style="margin-top:10px">
+          <select id="itemSelect"></select>
+          <input id="qty" type="number" min="1" value="1" style="width:80px" />
+          <button id="add">Ajouter</button>
+        </div>
+        <div id="cart" class="list"></div>
+        <div class="row" style="margin-top:10px">
+          <button id="orderBtn">Passer la commande</button>
+        </div>
+      </section>
+    </main>
+    <script src="app.js"></script>
+    <script>
+      const q = new URLSearchParams(location.search);
+      const tableId = Number(q.get('table') || 1);
+      let cart = [];
+
+      function render() {
+        const state = Kahwa.loadState();
+        const table = state.tables.find(t => t.id === tableId);
+        document.getElementById('tableLabel').textContent = table ? `${table.name}` : `Table ${tableId}`;
+        document.getElementById('cashState').textContent = state.cash.isOpen ? '✅ Commande active' : '⛔ La caisse est fermée pour le moment';
+        document.getElementById('itemSelect').innerHTML = state.menu.map(i => `<option value="${i.id}">${i.name} (${Kahwa.fmt(i.price)})</option>`).join('');
+        document.getElementById('cart').innerHTML = cart.map((l,i) => `<div class="item">${l.name} x ${l.qty} <button class="danger" onclick="removeLine(${i})">X</button></div>`).join('');
+      }
+
+      function removeLine(i) {
+        cart.splice(i,1);
+        render();
+      }
+
+      document.getElementById('add').onclick = () => {
+        const state = Kahwa.loadState();
+        const item = state.menu.find(m => m.id === Number(document.getElementById('itemSelect').value));
+        const qty = Number(document.getElementById('qty').value || 1);
+        cart.push({ itemId: item.id, name: item.name, qty });
+        render();
+      };
+
+      document.getElementById('orderBtn').onclick = () => {
+        if (!cart.length) return alert('Panier vide');
+        try {
+          Kahwa.createOrder({ tableId, lines: cart, source: 'qr' });
+          cart = [];
+          render();
+          alert('Commande envoyée au serveur et barman ✅');
+        } catch (e) {
+          alert(e.message);
+        }
+      };
+
+      window.addEventListener('storage', render);
+      render();
+    </script>
+  </body>
+</html>

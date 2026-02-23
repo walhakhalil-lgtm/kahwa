@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interface Barman</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Interface Barman</h1>
+      <p><a href="index.html">← Accueil</a></p>
+      <div class="layout">
+        <section class="panel">
+          <h2>Tables</h2>
+          <div id="tables" class="table-grid"></div>
+        </section>
+        <section class="panel">
+          <h2>Commandes à préparer</h2>
+          <div id="orders" class="list"></div>
+        </section>
+      </div>
+    </main>
+    <script src="app.js"></script>
+    <script>
+      function render() {
+        const state = Kahwa.loadState();
+        document.getElementById('tables').innerHTML = state.tables.map(t => `
+          <div class="table-card ${t.status}">
+            <strong>${t.name}</strong><br>
+            ${t.status === 'ordered' ? '🔴 En attente' : t.status === 'served' ? '🟠 Servie' : '🟢 Libre'}
+          </div>
+        `).join('');
+
+        const todo = state.orders.filter(o => ['new','preparing'].includes(o.status)).sort((a,b)=>a.id-b.id);
+        document.getElementById('orders').innerHTML = todo.length ? todo.map(o => `
+          <div class="item">
+            <strong>Commande #${o.id}</strong> - Table ${o.tableId}<br>
+            ${o.lines.map(l => `${l.name} x${l.qty}`).join(', ')}
+            <div class="row" style="margin-top:8px">
+              ${o.status === 'new' ? `<button onclick="Kahwa.updateOrderStatus(${o.id}, 'preparing');render()" class="secondary">Démarrer préparation</button>` : ''}
+              <button onclick="Kahwa.updateOrderStatus(${o.id}, 'served');render()">Marquer prête/servie</button>
+            </div>
+          </div>
+        `).join('') : '<div class="small">Aucune commande à préparer.</div>';
+      }
+      window.addEventListener('storage', render);
+      render();
+    </script>
+  </body>
+</html>
