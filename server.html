@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interface Serveur</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <main class="container">
+      <h1>Interface Serveur</h1>
+      <p><a href="index.html">← Accueil</a></p>
+      <div class="layout">
+        <section class="panel">
+          <h2>Etat des tables</h2>
+          <div id="tables" class="table-grid"></div>
+        </section>
+        <section class="panel">
+          <h2>Nouvelle commande</h2>
+          <div class="row">
+            <label>Table</label>
+            <select id="tableSelect"></select>
+          </div>
+          <div class="row">
+            <label>Article</label>
+            <select id="itemSelect"></select>
+            <input id="qty" type="number" value="1" min="1" style="width:70px" />
+            <button id="addLine" class="secondary">Ajouter</button>
+          </div>
+          <div id="lines" class="list"></div>
+          <div class="row">
+            <button id="submitOrder">Valider la commande</button>
+          </div>
+
+          <h3>Commandes ouvertes</h3>
+          <div id="orders" class="list"></div>
+        </section>
+      </div>
+    </main>
+    <script src="app.js"></script>
+    <script>
+      let cart = [];
+      function render() {
+        const state = Kahwa.loadState();
+        const tableEl = document.getElementById('tables');
+        tableEl.innerHTML = state.tables.map(t => `
+          <div class="table-card ${t.status}">
+            <strong>${t.name}</strong><br>
+            <span>${t.status === 'free' ? '🟢 Libre' : t.status === 'ordered' ? '🔴 En préparation' : '🟠 Servie'}</span>
+          </div>
+        `).join('');
+
+        document.getElementById('tableSelect').innerHTML = state.tables.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+        document.getElementById('itemSelect').innerHTML = state.menu.map(i => `<option value="${i.id}">${i.name} (${Kahwa.fmt(i.price)})</option>`).join('');
+        document.getElementById('lines').innerHTML = cart.map((l, idx) => `<div class="item">${l.name} x ${l.qty} <button onclick="removeLine(${idx})" class="danger">X</button></div>`).join('');
+
+        const openOrders = state.orders.filter(o => o.status !== 'paid').sort((a,b) => b.id - a.id);
+        document.getElementById('orders').innerHTML = openOrders.map(o => `
+          <div class="item">
+            <strong>Commande #${o.id}</strong> - Table ${o.tableId} - <span class="badge">${o.status}</span><br>
+            ${o.lines.map(l => `${l.name} x${l.qty}`).join(', ')}<br>
+            <span>Total: ${Kahwa.fmt(o.total)}</span>
+            <div class="row" style="margin-top:6px">
+              ${o.status !== 'served' ? `<button onclick="Kahwa.updateOrderStatus(${o.id}, 'served');render()" class="secondary">Marquer servie</button>` : ''}
+              <button onclick="Kahwa.updateOrderStatus(${o.id}, 'paid');render()">Encaisser / Libérer</button>
+            </div>
+          </div>
+        `).join('');
+      }
+
+      function removeLine(idx) {
+        cart.splice(idx, 1);
+        render();
+      }
+
+      document.getElementById('addLine').onclick = () => {
+        const state = Kahwa.loadState();
+        const item = state.menu.find(i => i.id === Number(document.getElementById('itemSelect').value));
+        const qty = Number(document.getElementById('qty').value || 1);
+        cart.push({ itemId: item.id, name: item.name, qty });
+        render();
+      };
+
+      document.getElementById('submitOrder').onclick = () => {
+        if (!cart.length) return alert('Ajoutez au moins une ligne');
+        try {
+          Kahwa.createOrder({
+            tableId: Number(document.getElementById('tableSelect').value),
+            lines: cart,
+            source: 'server'
+          });
+          cart = [];
+          render();
+        } catch (e) {
+          alert(e.message);
+        }
+      };
+
+      window.addEventListener('storage', render);
+      render();
+    </script>
+  </body>
+</html>
