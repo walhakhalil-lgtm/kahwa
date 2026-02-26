@@ -1,0 +1,46 @@
+<main class="director" *ngIf="match">
+  <section class="top-zone">
+    <div class="time-controls card">
+      <select [ngModel]="match.clock.period" (ngModelChange)="api.setPeriod($event).subscribe()">
+        <option value="FIRST_HALF">1ère mi-temps</option>
+        <option value="SECOND_HALF">2ème mi-temps</option>
+        <option value="EXTRA_TIME">Prolongation</option>
+      </select>
+      <div class="row">
+        <button (click)="api.playTimer().subscribe()">PLAY</button>
+        <button (click)="api.pauseTimer().subscribe()">PAUSE</button>
+        <button (click)="api.addAdditional(60).subscribe()">+ Temps add.</button>
+        <button (click)="api.resetHalf().subscribe()">Reset</button>
+      </div>
+      <div class="timer">{{ formatTime(match.clock.elapsedSeconds) }}</div>
+    </div>
+
+    <div class="score card">
+      <h2>{{ match.teams.A.name }} {{ match.teams.A.score }} - {{ match.teams.B.score }} {{ match.teams.B.name }}</h2>
+      <div class="row">
+        <button class="team-a" (click)="addEvent('A', 'GOAL')">+ But équipe A</button>
+        <button class="team-b" (click)="addEvent('B', 'GOAL')">+ But équipe B</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="split-zone">
+    <article class="team card team-a">
+      <h3>{{ match.teams.A.name }}</h3>
+      <button (click)="addEvent('A', 'YELLOW_CARD')">Carton Jaune</button>
+      <button (click)="addEvent('A', 'RED_CARD')">Carton Rouge</button>
+      <button (click)="addEvent('A', 'SUBSTITUTION')">Changement</button>
+      <button (click)="addEvent('A', 'CORNER')">Corner</button>
+      <button (click)="addEvent('A', 'GOAL')">But rapide</button>
+    </article>
+
+    <article class="team card team-b">
+      <h3>{{ match.teams.B.name }}</h3>
+      <button (click)="addEvent('B', 'YELLOW_CARD')">Carton Jaune</button>
+      <button (click)="addEvent('B', 'RED_CARD')">Carton Rouge</button>
+      <button (click)="addEvent('B', 'SUBSTITUTION')">Changement</button>
+      <button (click)="addEvent('B', 'CORNER')">Corner</button>
+      <button (click)="addEvent('B', 'GOAL')">But rapide</button>
+    </article>
+  </section>
+</main>

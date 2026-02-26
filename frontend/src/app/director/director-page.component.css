@@ -1,0 +1,73 @@
+:host {
+  display: block;
+  min-height: 100vh;
+  background: #0b1120;
+  color: #f3f4f6;
+  font-family: Inter, system-ui, sans-serif;
+}
+
+.director {
+  padding: 0.75rem;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.top-zone,
+.split-zone {
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (orientation: landscape) {
+  .split-zone {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card {
+  background: #111827;
+  border-radius: 12px;
+  padding: 0.75rem;
+}
+
+.team {
+  display: grid;
+  gap: 0.5rem;
+}
+
+button,
+select {
+  min-height: 54px;
+  border: 0;
+  border-radius: 10px;
+  font-size: 1rem;
+  font-weight: 700;
+  width: 100%;
+}
+
+button {
+  background: #374151;
+  color: white;
+}
+
+.row {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr 1fr;
+}
+
+.timer {
+  text-align: center;
+  font-size: 2.3rem;
+  margin-top: 0.75rem;
+}
+
+.team-a h3,
+.team-a button {
+  border-left: 4px solid #2563eb;
+}
+
+.team-b h3,
+.team-b button {
+  border-left: 4px solid #dc2626;
+}
